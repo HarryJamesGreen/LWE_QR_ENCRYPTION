@@ -30,24 +30,24 @@ Lattice-based cryptography relies on the hardness of certain lattice problems, s
 
 ### Learning With Errors (LWE) Problem
 
-Given a matrix \( A \in \mathbb{Z}_q^{n \times m} \) and a vector \( s \in \mathbb{Z}_q^m \), the goal is to find \( s \) given \( A \) and \( b = As + e \), where \( e \) is a small error vector. Mathematically, the problem is to solve \( b = As + e \). The security of LWE relies on the difficulty of solving this equation, especially when the error vector \( e \) is small and the dimension \( n \) is large.
+Given a matrix `A ∈ ℤ_q^{n × m}` and a vector `s ∈ ℤ_q^m`, the goal is to find `s` given `A` and `b = As + e`, where `e` is a small error vector. Mathematically, the problem is to solve `b = As + e`. The security of LWE relies on the difficulty of solving this equation, especially when the error vector `e` is small and the dimension `n` is large.
 
 ### Key Generation
 
-1. Choose a random matrix \( A \in \mathbb{Z}_q^{n \times m} \).
-2. Choose a secret vector \( s \in \mathbb{Z}_q^m \).
-3. Generate a small error vector \( e \in \mathbb{Z}_q^n \).
-4. Compute \( b = (As + e) \mod q \).
+1. Choose a random matrix `A ∈ ℤ_q^{n × m}`.
+2. Choose a secret vector `s ∈ ℤ_q^m`.
+3. Generate a small error vector `e ∈ ℤ_q^n`.
+4. Compute `b = (As + e) mod q`.
 
 ### Encryption
 
-1. Choose a random vector \( r \in \mathbb{Z}_q^n \).
-2. Compute the ciphertext \( c = (A^T r + m) \mod q \).
+1. Choose a random vector `r ∈ ℤ_q^n`.
+2. Compute the ciphertext `c = (A^T r + m) mod q`.
 
 ### Decryption
 
-1. Compute \( A^T r \).
-2. Recover the message \( m = (c - A^T r) \mod q \).
+1. Compute `A^T r`.
+2. Recover the message `m = (c - A^T r) mod q`.
 
 ## Installation
 
