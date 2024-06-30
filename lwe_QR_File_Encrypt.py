@@ -1,94 +1,154 @@
 import numpy as np
 from scipy.stats import norm
+import secrets
+import hashlib
+from numpy.random import default_rng
 import os
+import argparse
 import pickle
 
+def discrete_gaussian_sampler(sigma, size):
+    rng = default_rng()
+    return np.round(rng.normal(0, sigma, size)).astype(int)
+
 def generate_lwe_instance(n, m, q, sigma):
-    # Generate random matrix A
-    A = np.random.randint(0, q, size=(n, m))
-    
-    # Generate secret vector s
-    s = np.random.randint(0, q, size=m)
-    
-    # Generate Gaussian error vector e
-    e = np.round(norm.rvs(scale=sigma, size=n)).astype(int) % q
-    
-    # Compute b = (As + e) % q
+    A = np.array([secure_random_int(q, m) for _ in range(n)], dtype=np.int64)
+    s = secure_random_int(q, m)
+    e = discrete_gaussian_sampler(sigma, n) % q
     b = (np.dot(A, s) + e) % q
-    
     return A, b, s, e
 
+def secure_random_int(q, size):
+    return np.array([secrets.randbelow(q) for _ in range(size)], dtype=np.int64)
+
+def pad_message(message, n):
+    message_length = len(message)
+    if message_length < n:
+        padding_length = n - message_length
+        padding = np.zeros(padding_length, dtype=np.int64)
+        padded_message = np.concatenate((message, padding))
+    else:
+        padded_message = message[:n]
+    return padded_message
+
 def encrypt_message(A, m, q):
-    # Choose a random vector r
-    r = np.random.randint(0, q, size=A.shape[0])
-    
-    # Compute the ciphertext c = (A^T r + m) % q
+    r = secure_random_int(q, A.shape[0])
     c = (np.dot(A.T, r) + m) % q
-    
     return c, r
 
 def decrypt_message(A, c, r, q):
-    # Compute A^T r
     Ar = np.dot(A.T, r) % q
-    
-    # Recover the message m = (c - Ar) % q
     m = (c - Ar) % q
-    
     return m
 
-def save_to_file(filename, data):
-    with open(filename, 'wb') as f:
-        pickle.dump(data, f)
+def hash_key(key):
+    key_bytes = key.tobytes()
+    hashed_key = hashlib.sha256(key_bytes).digest()
+    return np.frombuffer(hashed_key, dtype=np.uint8)
 
-def load_from_file(filename):
-    with open(filename, 'rb') as f:
-        return pickle.load(f)
+def clear_sensitive_data(*args):
+    for arg in args:
+        if isinstance(arg, np.ndarray):
+            if not arg.flags.writeable:
+                arg.flags.writeable = True
+            arg.fill(0)
+        elif isinstance(arg, int):
+            arg = 0
+        elif isinstance(arg, (list, tuple)):
+            for i in range(len(arg)):
+                arg[i] = 0
 
-def encrypt_file(input_file, output_file, A, q):
+def encrypt_file(input_file, output_file, A, q, sigma):
     with open(input_file, 'rb') as f:
         file_data = f.read()
-    
-    # Convert file data to an integer array
-    file_data_int = np.frombuffer(file_data, dtype=np.uint8)
-    message = file_data_int % q
-    
-    ciphertext, r = encrypt_message(A, message, q)
-    
-    # Save ciphertext and r to file
-    save_to_file(output_file, (ciphertext, r))
-
-def decrypt_file(input_file, output_file, A, s, q):
-    # Load ciphertext and r from file
-    ciphertext, r = load_from_file(input_file)
-    
-    decrypted_message = decrypt_message(A, ciphertext, r, q)
-    
-    # Convert decrypted message back to bytes
-    file_data_bytes = np.array(decrypted_message, dtype=np.uint8).tobytes()
-    
+    file_data_int = np.frombuffer(file_data, dtype=np.uint8).astype(np.int64) % q
+    padded_length = A.shape[0] * ((len(file_data_int) // A.shape[0]) + 1)
+    padded_data = np.zeros(padded_length, dtype=np.int64)
+    padded_data[:len(file_data_int)] = file_data_int
+    ciphertext, r = encrypt_message(A, padded_data, q)
     with open(output_file, 'wb') as f:
-        f.write(file_data_bytes)
+        pickle.dump((ciphertext, r), f)
 
-# Parameters
-n = 50  # larger dimension for better security
-m = 50  # larger dimension for better security
-q = 65537  # larger prime modulus
-sigma = 3.2  # standard deviation for Gaussian noise
+def decrypt_file(input_file, output_file, A, q):
+    with open(input_file, 'rb') as f:
+        ciphertext, r = pickle.load(f)
+    decrypted_message = decrypt_message(A, ciphertext, r, q)
+    decrypted_bytes = decrypted_message.astype(np.uint8).tobytes()
+    with open(output_file, 'wb') as f:
+        f.write(decrypted_bytes)
 
-# Generate LWE instance
-A, b, s, e = generate_lwe_instance(n, m, q, sigma)
-print("Matrix A:\n", A)
-print("Vector b:\n", b)
-print("Secret vector s:\n", s)
-print("Error vector e:\n", e)
+def main():
+    parser = argparse.ArgumentParser(description="LWE-based encryption and decryption")
+    parser.add_argument('--action', choices=['encrypt-message', 'decrypt-message', 'encrypt-file', 'decrypt-file'], required=True, help="Action to perform")
+    parser.add_argument('--message', type=str, help="Message to encrypt/decrypt")
+    parser.add_argument('--input-file', type=str, help="Input file for encryption/decryption")
+    parser.add_argument('--output-file', type=str, help="Output file for encryption/decryption")
+    parser.add_argument('--param-file', type=str, default="encryption_params.pkl", help="File to save/load encryption parameters")
+    args = parser.parse_args()
 
-# Example usage for encrypting and decrypting a file
-input_file = 'input.txt'
-encrypted_file = 'encrypted.pkl'
-decrypted_file = 'decrypted.txt'
+    try:
+        # Parameters
+        n = 1024  # Dimension for better security
+        m = 1024  # Dimension for better security
+        q = 2**31 - 1  # Prime modulus
+        sigma = 3.2  # Standard deviation for Gaussian noise
 
-# Encrypt the file
-encrypt_file(input_file, encrypted_file, A, q)
+        if args.action in ['encrypt-message', 'encrypt-file']:
+            # Generate LWE instance
+            A, b, s, e = generate_lwe_instance(n, m, q, sigma)
 
-# Decrypt the file
-decrypt_file(encrypted_file, decrypted_file, A, s, q)
+            if args.action == 'encrypt-message':
+                if not args.message:
+                    raise ValueError("Message must be provided for encryption")
+                message = np.frombuffer(args.message.encode(), dtype=np.uint8).astype(np.int64) % q
+                padded_message = pad_message(message, n)
+                ciphertext, r = encrypt_message(A, padded_message, q)
+                with open(args.param_file, "wb") as f:
+                    pickle.dump((A, b, s, e, r, ciphertext), f)
+                print("Ciphertext:", ciphertext)
+                print("Random vector r:", r)
+                print(f"Encryption parameters saved to {args.param_file}")
+
+            elif args.action == 'encrypt-file':
+                if not args.input_file or not args.output_file:
+                    raise ValueError("Input and output files must be provided for encryption")
+                encrypt_file(args.input_file, args.output_file, A, q, sigma)
+                with open(args.param_file, "wb") as f:
+                    pickle.dump((A, b, s, e), f)
+                print(f"Encryption parameters saved to {args.param_file}")
+
+        elif args.action in ['decrypt-message', 'decrypt-file']:
+            with open(args.param_file, "rb") as f:
+                params = pickle.load(f)
+
+            if args.action == 'decrypt-message':
+                if len(params) == 6:
+                    A, b, s, e, r, ciphertext = params
+                else:
+                    raise ValueError("Incorrect number of parameters for message decryption.")
+                if not args.message:
+                    raise ValueError("Message must be provided for decryption")
+                decrypted_message = decrypt_message(A, ciphertext, r, q)
+                decrypted_text = ''.join([chr(x) for x in decrypted_message if x < 256])
+                print("Decrypted message:", decrypted_text)
+
+            elif args.action == 'decrypt-file':
+                if len(params) == 4:
+                    A, b, s, e = params
+                else:
+                    raise ValueError("Incorrect number of parameters for file decryption.")
+                if not args.input_file or not args.output_file:
+                    raise ValueError("Input and output files must be provided for decryption")
+                decrypt_file(args.input_file, args.output_file, A, q)
+                print(f"File decrypted and saved to {args.output_file}")
+
+    finally:
+        try:
+            # Clear sensitive data from memory
+            clear_sensitive_data(A, b, s, e)
+        except NameError:
+            # If any variable is not defined due to an earlier error, skip clearing
+            pass
+
+if __name__ == "__main__":
+    main()

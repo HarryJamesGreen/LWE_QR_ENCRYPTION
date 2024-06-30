@@ -1,0 +1,8 @@
+.vscode/tasks.json
+.vscode/settings.json
+.vscode/launch.json
+.vscode/c_cpp_properties.json
+lwe_QR_inC.c
+yourfile.txt
+encryption_params.pkl
+encrypted.pkl
