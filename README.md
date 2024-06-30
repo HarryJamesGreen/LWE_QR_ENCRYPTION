@@ -55,19 +55,25 @@ To run the code, you need to have Python and the necessary libraries installed. 
 ```bash
 pip install numpy scipy
 ```
+
 ## Usage
+
 Encrypting and Decrypting Messages
 Encrypt a Message:
 
 ```bash
 python lwe_qr_file_encrypt.py --action encrypt-message --message "Your message here" --param-file encryption_params.pkl
 ```
+
 This command will encrypt the provided message and save the encryption parameters to encryption_params.pkl.
 Decrypt a Message:
 
 ```bash
-python lwe_qr_file_encrypt.py --action decrypt-message --message "Ciphertext from encryption step" --param-file encryption_params.pkl
+python lwe_qr_file_encrypt.py --action decrypt-message --message "Ciphertext from 
+encryption step" --param-file encryption_params.pkl
+
 ```
+
 Use the exact ciphertext saved from the encryption step for decryption.
 Encrypting and Decrypting Files
 Encrypt a File:
@@ -75,11 +81,16 @@ Encrypt a File:
 ```bash
 python lwe_qr_file_encrypt.py --action encrypt-file --input-file yourfile.txt 
 --output-file encrypted.pkl --param-file encryption_params.pkl
+
 ```
+
 This command will encrypt the contents of yourfile.txt and save the encrypted data to encrypted.pkl.
 Decrypt a File:
 
 ```bash
-python lwe_qr_file_encrypt.py --action decrypt-file --input-file encrypted.pkl --output-file decrypted.txt --param-file encryption_params.pkl
+python lwe_qr_file_encrypt.py --action decrypt-file --input-file encrypted.pkl 
+--output-file decrypted.txt --param-file encryption_params.pkl
+
 ```
+
 This command will decrypt the contents of encrypted.pkl and save the decrypted data to decrypted.txt.
