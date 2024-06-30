@@ -1,14 +1,15 @@
 import numpy as np
+from scipy.stats import norm
 
-def generate_lwe_instance(n, m, q):
+def generate_lwe_instance(n, m, q, sigma):
     # Generate random matrix A
     A = np.random.randint(0, q, size=(n, m))
     
     # Generate secret vector s
     s = np.random.randint(0, q, size=m)
     
-    # Generate small error vector e
-    e = np.random.randint(-3, 4, size=n)  # small values -3, -2, -1, 0, 1, 2, 3
+    # Generate Gaussian error vector e
+    e = np.round(norm.rvs(scale=sigma, size=n)).astype(int) % q
     
     # Compute b = As + e
     b = (np.dot(A, s) + e) % q
@@ -34,12 +35,13 @@ def decrypt_message(A, c, r, q):
     return m
 
 # Parameters
-n = 10  # dimension of b and e
-m = 10  # dimension of s
-q = 101  # modulus, using a larger prime number for better security
+n = 50  # larger dimension for better security
+m = 50  # larger dimension for better security
+q = 65537  # larger prime modulus
+sigma = 3.2  # standard deviation for Gaussian noise
 
 # Generate LWE instance
-A, b, s, e = generate_lwe_instance(n, m, q)
+A, b, s, e = generate_lwe_instance(n, m, q, sigma)
 print("Matrix A:\n", A)
 print("Vector b:\n", b)
 print("Secret vector s:\n", s)
