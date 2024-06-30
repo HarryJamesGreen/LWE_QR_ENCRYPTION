@@ -41,6 +41,7 @@ To run the code, you need to have Python and the necessary libraries installed. 
 
 ```bash
 pip install numpy scipy
+```
 
 ## Usage
 
@@ -49,13 +50,16 @@ pip install numpy scipy
 ```bash
 git clone https://github.com/yourusername/LWE-Cryptography.git
 cd LWE-Cryptography
+```
 
 2. Run the python script:
+ ```
 python lwe_encryption.py
+```
 
 ## Example output
-
-1. Matrix A:
+```
+ Matrix A:
  [[47155 52929 56115 ... 56787  3981 16389]
  [41602   153 26370 ... 18047 11774 59422]
  [22709 20554 18615 ...  3644 27440 59837]
