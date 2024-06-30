@@ -2,6 +2,20 @@
 
 This repository contains a Python implementation of the Learning With Errors (LWE) encryption and decryption scheme, a fundamental concept in lattice-based cryptography. This implementation demonstrates key generation, encryption, and decryption processes, showcasing the mathematical foundations of post-quantum cryptographic algorithms.
 
+## Table of Contents
+- [Learning With Errors (LWE) Cryptography](#learning-with-errors-lwe-cryptography)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Features](#features)
+  - [Mathematical Foundations](#mathematical-foundations)
+    - [Learning With Errors (LWE) Problem](#learning-with-errors-lwe-problem)
+    - [Key Generation](#key-generation)
+    - [Encryption](#encryption)
+    - [Decryption](#decryption)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Example output](#example-output)
+
 ## Overview
 
 Lattice-based cryptography relies on the hardness of certain lattice problems, such as the Shortest Vector Problem (SVP) and Learning With Errors (LWE). These problems are believed to be resistant to attacks by both classical and quantum computers. The LWE problem forms the basis of various cryptographic protocols, including encryption schemes that are secure against quantum attacks.
